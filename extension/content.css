@@ -40,7 +40,6 @@
   line-height: 1.5;
   color: #1f2937;
   animation: jmSlideUp 0.25s ease-out;
-  overflow: hidden;
 }
 
 @keyframes jmSlideUp {
@@ -53,12 +52,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   color: #fff;
   font-weight: 600;
   font-size: 14px;
   border-radius: 16px 16px 0 0;
+  flex-shrink: 0;
 }
 #jm-close-btn {
   background: none;
@@ -76,7 +76,8 @@
 #jm-panel-body {
   padding: 16px;
   overflow-y: auto;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .jm-desc {
