@@ -26,7 +26,7 @@ function doPost(e) {
       data.location || "",
       data.url || "",
       data.postedDate || "",
-      data.description ? data.description.substring(0, 500) : "",
+      data.description ? data.description.substring(0, 5000) : "",
       data.matchPercentage || "",
       data.matchedSkills || "",
       data.missingSkills || "",
