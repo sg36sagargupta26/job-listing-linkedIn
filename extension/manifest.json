@@ -13,7 +13,8 @@
       "matches": [
         "https://www.linkedin.com/jobs/view/*",
         "https://www.linkedin.com/jobs/collections/*",
-        "https://www.linkedin.com/jobs/search/*"
+        "https://www.linkedin.com/jobs/search/*",
+        "https://www.naukri.com/*"
       ],
       "js": ["cv-data.js", "content.js"],
       "css": ["content.css"]

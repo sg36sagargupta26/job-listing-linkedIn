@@ -9,8 +9,16 @@
   let isAnalyzing = false;
   let isSaving = false;
 
+  // ── Site Detection ─────────────────────────────────
+  function getSite() {
+    if (window.location.hostname.includes("linkedin.com")) return "linkedin";
+    if (window.location.hostname.includes("naukri.com")) return "naukri";
+    return "unknown";
+  }
+
   // ── DOM Extraction (robust, many fallbacks) ────────────
   function extractJobDetails() {
+    const site = getSite();
     // Helper: try each selector until one matches
     const find = (selectors) => {
       for (const sel of selectors) {
@@ -20,21 +28,49 @@
       return "";
     };
 
-    // Also try finding by visible text patterns
-    const findInPage = (patterns) => {
-      const all = document.body.querySelectorAll("h1, h2, h3, span, div, a, p, section");
-      for (const pat of patterns) {
-        for (const el of all) {
-          if (el.textContent.toLowerCase().includes(pat.toLowerCase()) && el.textContent.trim().length < 200) {
-            return el.textContent.trim();
-          }
-        }
-      }
-      return "";
-    };
+    let title, company, location, postedDate, description;
 
-    const title =
-      find([
+    if (site === "naukri") {
+      // ── Naukri selectors ────────────────────────────
+      title = find([
+        "h1",
+        ".styles_jd-header-title__VUqXW",
+        '[class*="jd-header"] h1',
+        '[class*="job-title"]',
+        '[class*="JdTitle"]',
+      ]);
+
+      company = find([
+        '[class*="jd-header"] a',
+        '[class*="company-name"]',
+        '[class*="companyName"]',
+        '[class*="styles_jd-header-company"]',
+        'a[href*="company"]',
+      ]);
+
+      location = find([
+        '[class*="location"]',
+        '[class*="styles_jd-header"] [class*="location"]',
+        '[class*="Locality"]',
+      ]);
+
+      postedDate = find([
+        '[class*="posted"]',
+        '[class*="days-ago"]',
+        '[class*="styles_jd-header"] span',
+      ]);
+
+      // Naukri job description
+      description = find([
+        '[class*="styles_jd-content"]',
+        '[class*="job-description"]',
+        '[class*="jdDesc"]',
+        '[class*="description"]',
+        '.styles_jd-main__v02Fc',
+      ]);
+    } else {
+      // ── LinkedIn selectors ──────────────────────────
+      title = find([
         ".job-details-jobs-unified-top-card__job-title h1",
         ".jobs-unified-top-card__job-title",
         "h1.t-24",
@@ -42,10 +78,9 @@
         ".topcard__title",
         ".top-card-layout__title",
         "h1",
-      ]) || findInPage(["engineer", "developer", "manager", "architect"]) || document.title.replace(" | LinkedIn", "").trim();
+      ]);
 
-    const company =
-      find([
+      company = find([
         ".job-details-jobs-unified-top-card__company-name a",
         ".jobs-unified-top-card__company-name a",
         ".job-details-jobs-unified-top-card__company-name",
@@ -54,8 +89,7 @@
         '[class*="company-name"]',
       ]);
 
-    const location =
-      find([
+      location = find([
         ".job-details-jobs-unified-top-card__bullet",
         ".jobs-unified-top-card__bullet",
         ".topcard__flavor--bullet",
@@ -63,19 +97,13 @@
         ".job-details-jobs-unified-top-card__primary-description-container span",
       ]);
 
-    // Clean location (remove posted date junk)
-    const cleanLocation = location.replace(/\s*·\s*.*$/, "").trim();
-
-    const postedDate =
-      find([
+      postedDate = find([
         ".jobs-unified-top-card__posted-date",
         ".job-details-jobs-unified-top-card__primary-description-container span.t-black--light:last-of-type",
         ".topcard__flavor--status",
       ]);
 
-    // Description: try specific selectors first, then grab the largest text block
-    let description =
-      find([
+      description = find([
         ".jobs-description__content",
         ".jobs-description-content",
         ".jobs-description-content__text",
@@ -86,6 +114,19 @@
         ".description__text",
         '[class*="description"]',
       ]);
+    }
+
+    // Fallback: title from document.title
+    if (!title) {
+      title = document.title
+        .replace(" | LinkedIn", "")
+        .replace(" - Naukri.com", "")
+        .replace(" Jobs", "")
+        .trim();
+    }
+
+    // Clean location (remove posted date junk)
+    const cleanLocation = (location || "").replace(/\s*·\s*.*$/, "").trim();
 
     // Fallback: get the main content area (largest text block on page)
     if (!description || description.length < 100) {
@@ -106,6 +147,7 @@
       postedDate: postedDate || "",
       description: description || "",
       url: window.location.href,
+      site: site,
       scrapedAt: new Date().toISOString(),
     };
   }
@@ -152,7 +194,7 @@ Summary: ${cv.summary}`.trim();
       </div>
       <div id="jm-panel" style="display:none;">
         <div id="jm-panel-header">
-          <span>🎯 Job Matcher</span>
+          <span id="jm-panel-title">🎯 Job Matcher</span>
           <button id="jm-close-btn">&times;</button>
         </div>
         <div id="jm-panel-body">
@@ -237,7 +279,13 @@ Summary: ${cv.summary}`.trim();
       summary: root.querySelector("#jm-summary"),
     };
 
-    console.log("[JobMatcher] Overlay injected. Ready on:", window.location.href);
+    // Set site-aware title
+    const site = getSite();
+    const siteLabel = site === "naukri" ? "Naukri" : "LinkedIn";
+    const titleEl = root.querySelector("#jm-panel-title");
+    if (titleEl) titleEl.textContent = `🎯 Job Matcher — ${siteLabel}`;
+
+    console.log(`[JobMatcher] Overlay injected on ${site}:`, window.location.href);
   }
 
   // ── Analysis ─────────────────────────────────────────
