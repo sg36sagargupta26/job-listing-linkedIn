@@ -365,20 +365,41 @@ Summary: ${cv.summary}`.trim();
   }
 
   // ── Init (aggressive — inject button immediately) ────
+  let lastUrl = window.location.href;
+
   function init() {
     console.log("[JobMatcher] Initializing on:", window.location.href);
-
-    // Inject the button/overlay immediately
+    lastUrl = window.location.href;
     createOverlay();
-
-    // Also retry after a delay to catch late-loading content
-    setTimeout(() => {
-      const existing = document.getElementById("jm-overlay-root");
-      if (!existing || !existing.querySelector("#jm-floating-btn")) {
-        createOverlay();
-      }
-    }, 3000);
   }
+
+  // ── SPA navigation detection (LinkedIn doesn't reload) ──
+  // Monitor URL changes every second
+  setInterval(() => {
+    if (window.location.href !== lastUrl) {
+      console.log("[JobMatcher] SPA navigation detected:", window.location.href);
+      lastUrl = window.location.href;
+      // Reset all state
+      analysisResult = null;
+      isAnalyzing = false;
+      isSaving = false;
+      // Re-inject fresh overlay
+      createOverlay();
+    }
+  }, 1000);
+
+  // Also watch for overlay removal (LinkedIn might strip our DOM)
+  const observer = new MutationObserver(() => {
+    const existing = document.getElementById("jm-overlay-root");
+    if (!existing) {
+      console.log("[JobMatcher] Overlay removed by page, re-injecting");
+      analysisResult = null;
+      isAnalyzing = false;
+      isSaving = false;
+      createOverlay();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: false });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
