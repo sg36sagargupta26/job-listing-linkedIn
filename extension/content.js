@@ -183,6 +183,22 @@ Summary: ${cv.summary}`.trim();
 
     document.body.appendChild(root);
 
+    // ── Prevent scroll propagation ────────────────────
+    const panelBody = root.querySelector("#jm-panel-body");
+    panelBody.addEventListener("wheel", (e) => {
+      const { scrollTop, scrollHeight, clientHeight } = panelBody;
+      const atTop = scrollTop === 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+      if (e.deltaY < 0 && atTop) {
+        e.preventDefault(); // at top, scrolling up — block
+      } else if (e.deltaY > 0 && atBottom) {
+        e.preventDefault(); // at bottom, scrolling down — block
+      } else {
+        e.stopPropagation(); // scrolling within panel — don't leak to page
+      }
+    }, { passive: false });
+
     const floatingBtn = root.querySelector("#jm-floating-btn");
     const panel = root.querySelector("#jm-panel");
     const closeBtn = root.querySelector("#jm-close-btn");
