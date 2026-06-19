@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Matcher — Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="logo">🎯</span>
+      <h1>Job Matcher</h1>
+    </div>
+
+    <div class="section">
+      <label for="deepseek-key">DeepSeek API Key</label>
+      <input type="password" id="deepseek-key" placeholder="sk-...">
+      <span class="hint">Get your key at <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a></span>
+    </div>
+
+    <div class="section">
+      <label for="sheets-url">Google Sheets Web App URL</label>
+      <input type="text" id="sheets-url" placeholder="https://script.google.com/macros/s/.../exec">
+      <span class="hint">See instructions below to set up your sheet</span>
+    </div>
+
+    <button id="save-btn" class="btn-primary">Save Settings</button>
+    <div id="status" class="status"></div>
+
+    <hr>
+
+    <details class="instructions">
+      <summary>📋 How to set up Google Sheets</summary>
+      <ol>
+        <li>Create a <strong>Google Sheet</strong> with headers: <br>
+          <code>Title | Company | Location | URL | Posted | Description | Match% | Matched Skills | Missing Skills | Summary | Saved At</code>
+        </li>
+        <li>Go to <strong>Extensions → Apps Script</strong></li>
+        <li>Replace the code with the <strong>apps-script.gs</strong> file from this project</li>
+        <li>Click <strong>Deploy → New deployment → Web app</strong></li>
+        <li>Set "Who has access" = <strong>Anyone</strong></li>
+        <li>Copy the <strong>Web App URL</strong> and paste above</li>
+      </ol>
+    </details>
+
+    <hr>
+
+    <div class="cost-note">
+      <strong>💰 ~$1.50/month</strong> at ~100 jobs/day with DeepSeek V3
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
