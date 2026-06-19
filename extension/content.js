@@ -162,12 +162,12 @@ Summary: ${cv.summary}`.trim();
           </div>
           <div id="jm-results-view" style="display:none;">
             <div id="jm-score"></div>
+            <button id="jm-save-btn" class="jm-btn jm-btn-success">📊 Save to Sheet</button>
             <div id="jm-matched-skills"></div>
             <div id="jm-missing-skills"></div>
             <div id="jm-strengths"></div>
             <div id="jm-gaps"></div>
             <div id="jm-summary"></div>
-            <button id="jm-save-btn" class="jm-btn jm-btn-success">📊 Save to Sheet</button>
           </div>
           <div id="jm-loading-view" style="display:none;">
             <div class="jm-spinner"></div>
