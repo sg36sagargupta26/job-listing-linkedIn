@@ -48,11 +48,25 @@
         'a[href*="company"]',
       ]);
 
+      // Naukri location: multiple <a> tags inside a span
       location = find([
+        '[class*="styles_jhc__location"]',
         '[class*="location"]',
-        '[class*="styles_jd-header"] [class*="location"]',
         '[class*="Locality"]',
       ]);
+      // If the location element contains nested <a> tags, collect all values
+      if (location) {
+        const locEl = document.querySelector('[class*="styles_jhc__location"]') ||
+                       document.querySelector('[class*="location"]');
+        if (locEl) {
+          const anchors = locEl.querySelectorAll("a");
+          if (anchors.length > 0) {
+            location = Array.from(anchors).map(a => a.textContent.trim()).join(", ");
+          } else {
+            location = locEl.textContent.trim();
+          }
+        }
+      }
 
       postedDate = find([
         '[class*="posted"]',
