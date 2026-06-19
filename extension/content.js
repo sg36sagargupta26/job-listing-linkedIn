@@ -195,14 +195,24 @@
       )
       .join("\n\n");
 
+    const eduText = typeof cv.education === "object"
+      ? `${cv.education.degree}, ${cv.education.institute} (${cv.education.duration}, CGPA: ${cv.education.cgpa})`
+      : cv.education;
+
+    const projectsText = cv.projects
+      ? "\n\nProjects:\n" + cv.projects
+          .map((p) => `  • ${p.title}: ${p.description} (Tech: ${p.tech.join(", ")})`)
+          .join("\n")
+      : "";
+
     return `
 Name: ${cv.name}
 Title: ${cv.title}
-Education: ${cv.education}
+Education: ${eduText}
 Skills: ${cv.allSkillsFlat.join(", ")}
 
 Experience:
-${expText}
+${expText}${projectsText}
 
 Summary: ${cv.summary}`.trim();
   }

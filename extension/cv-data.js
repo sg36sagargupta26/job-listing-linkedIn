@@ -1,4 +1,4 @@
-// Sagar Gupta — CV Data (extracted from sg36sagargupta26.github.io)
+// Sagar Gupta — CV Data (auto-generated from sg36sagargupta26.github.io)
 const CV_DATA = {
   name: "Sagar Gupta",
   title: "Backend Engineer",
@@ -34,23 +34,43 @@ Graduate of IIT Kharagpur, passionate about clean architecture, developer produc
     }
   ],
 
-  education: "IIT Kharagpur",
+  education: {
+    institute: "Indian Institute of Technology, Kharagpur",
+    degree: "Dual Degree (B.Tech + M.Tech), Industrial Engineering",
+    duration: "2014 — 2019",
+    cgpa: "7.39 / 10"
+  },
+
+  projects: [
+    {
+      title: "URL Shortener with Analytics",
+      description: "Built a URL shortener with analytics using Spring Boot, Redis, and MySQL. Designed caching and lookup strategies achieving sub-50ms redirect latency and deployed on AWS EC2 with CloudWatch monitoring.",
+      tech: ["Spring Boot", "Redis", "MySQL", "AWS EC2"]
+    },
+    {
+      title: "New Product Sales Forecasting",
+      description: "Implemented data pipelines and analytical models in Python to forecast product sales by combining historical data with sentiment analysis. Masters project at IIT Kharagpur.",
+      tech: ["Python", "Data Pipelines", "Sentiment Analysis"]
+    }
+  ],
 
   skills: {
     languages: ["Java 8", "Java 17", "JavaScript", "Python"],
-    frameworks: ["Spring", "Spring Boot", "REST APIs", "React", "React Native"],
+    frameworks: ["Spring", "Spring Boot", "REST APIs", "React"],
     architecture: ["Microservices", "Cloud Native", "Auth Systems", "High Availability"],
-    databases: ["MySQL", "Redis"],
-    cloud_devops: ["AWS", "CI/CD", "Git", "GitLab CI", "Jenkins", "Docker"],
-    practices: ["System Modernization", "Cloud Migration", "Mutation Testing"]
+    databases: ["MySQL", "PostgreSQL", "Redis", "SQLite"],
+    cloud_devops: ["AWS", "CI/CD", "Git", "GitLab CI", "BitBucket", "Jenkins", "Docker"],
+    monitoring: ["Splunk", "ELK Stack"],
+    practices: ["System Modernization", "Cloud Migration", "Mutation Testing", "Tech Debt Reduction"]
   },
 
   allSkillsFlat: [
     "Java", "Java 8", "Java 17", "JavaScript", "Python",
     "Spring", "Spring Boot", "REST APIs", "React", "React Native",
     "Microservices", "Cloud Native", "Auth Systems", "High Availability",
-    "MySQL", "Redis",
-    "AWS", "CI/CD", "Git", "GitLab CI", "Jenkins", "Docker",
-    "System Modernization", "Cloud Migration", "Mutation Testing"
+    "MySQL", "PostgreSQL", "Redis", "SQLite",
+    "AWS", "CI/CD", "Git", "GitLab CI", "BitBucket", "Jenkins", "Docker",
+    "Splunk", "ELK Stack",
+    "System Modernization", "Cloud Migration", "Mutation Testing", "Tech Debt Reduction"
   ]
 };
