@@ -154,6 +154,9 @@
       description = best;
     }
 
+    // Clean description: strip prefixes, collapse whitespace
+    description = cleanDescription(description);
+
     return {
       title: title || "(untitled)",
       company: company || "(unknown)",
@@ -164,6 +167,18 @@
       site: site,
       scrapedAt: new Date().toISOString(),
     };
+  }
+
+  // ── Description cleanup ─────────────────────────────
+  function cleanDescription(text) {
+    if (!text) return "";
+    return text
+      .replace(/^About the job\s*/i, "")       // strip "About the job" prefix
+      .replace(/^About this job\s*/i, "")
+      .replace(/^Job description\s*/i, "")
+      .replace(/\n+/g, " ")                      // collapse newlines to space
+      .replace(/\s{2,}/g, " ")                    // collapse multiple spaces
+      .trim();
   }
 
   // ── CV Text ─────────────────────────────────────────
