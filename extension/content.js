@@ -112,9 +112,11 @@
       ]);
 
       postedDate = find([
+        ".tvm__text.tvm__text--low-emphasis",
         ".jobs-unified-top-card__posted-date",
         ".job-details-jobs-unified-top-card__primary-description-container span.t-black--light:last-of-type",
         ".topcard__flavor--status",
+        '[class*="posted"]',
       ]);
 
       description = find([
