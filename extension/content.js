@@ -2,80 +2,115 @@
 (function () {
   "use strict";
 
-  // Prevent double injection
   if (window.__jobMatcherInjected) return;
   window.__jobMatcherInjected = true;
 
-  // ── State ──────────────────────────────────────────────
   let analysisResult = null;
   let isAnalyzing = false;
   let isSaving = false;
 
-  // ── DOM Extraction ─────────────────────────────────────
+  // ── DOM Extraction (robust, many fallbacks) ────────────
   function extractJobDetails() {
-    const selectors = {
-      title: [
+    // Helper: try each selector until one matches
+    const find = (selectors) => {
+      for (const sel of selectors) {
+        const el = document.querySelector(sel);
+        if (el && el.textContent.trim()) return el.textContent.trim();
+      }
+      return "";
+    };
+
+    // Also try finding by visible text patterns
+    const findInPage = (patterns) => {
+      const all = document.body.querySelectorAll("h1, h2, h3, span, div, a, p, section");
+      for (const pat of patterns) {
+        for (const el of all) {
+          if (el.textContent.toLowerCase().includes(pat.toLowerCase()) && el.textContent.trim().length < 200) {
+            return el.textContent.trim();
+          }
+        }
+      }
+      return "";
+    };
+
+    const title =
+      find([
         ".job-details-jobs-unified-top-card__job-title h1",
         ".jobs-unified-top-card__job-title",
         "h1.t-24",
         ".job-details-jobs-unified-top-card__job-title",
-      ],
-      company: [
+        ".topcard__title",
+        ".top-card-layout__title",
+        "h1",
+      ]) || findInPage(["engineer", "developer", "manager", "architect"]) || document.title.replace(" | LinkedIn", "").trim();
+
+    const company =
+      find([
         ".job-details-jobs-unified-top-card__company-name a",
         ".jobs-unified-top-card__company-name a",
         ".job-details-jobs-unified-top-card__company-name",
-      ],
-      location: [
+        ".topcard__org-name-link",
+        ".top-card-layout__subtitle",
+        '[class*="company-name"]',
+      ]);
+
+    const location =
+      find([
         ".job-details-jobs-unified-top-card__bullet",
         ".jobs-unified-top-card__bullet",
-        ".job-details-jobs-unified-top-card__primary-description-container .t-black--light",
-      ],
-      postedDate: [
-        ".job-details-jobs-unified-top-card__primary-description-container .t-black--light:last-child",
+        ".topcard__flavor--bullet",
+        '[class*="location"]',
+        ".job-details-jobs-unified-top-card__primary-description-container span",
+      ]);
+
+    // Clean location (remove posted date junk)
+    const cleanLocation = location.replace(/\s*·\s*.*$/, "").trim();
+
+    const postedDate =
+      find([
         ".jobs-unified-top-card__posted-date",
-      ],
-      description: [
+        ".job-details-jobs-unified-top-card__primary-description-container span.t-black--light:last-of-type",
+        ".topcard__flavor--status",
+      ]);
+
+    // Description: try specific selectors first, then grab the largest text block
+    let description =
+      find([
         ".jobs-description__content",
+        ".jobs-description-content",
         ".jobs-description-content__text",
         "#job-details",
         ".jobs-box__html-content",
         "article.jobs-description",
-      ],
-    };
+        ".show-more-less-html__markup",
+        ".description__text",
+        '[class*="description"]',
+      ]);
 
-    function find(selectorList) {
-      for (const sel of selectorList) {
-        const el = document.querySelector(sel);
-        if (el) return el.textContent.trim();
-      }
-      return "";
+    // Fallback: get the main content area (largest text block on page)
+    if (!description || description.length < 100) {
+      let best = "";
+      document.querySelectorAll("section, article, div").forEach((el) => {
+        const text = el.textContent.trim();
+        if (text.length > best.length && text.length < 20000 && !el.closest("nav, header, footer, script, style")) {
+          best = text;
+        }
+      });
+      description = best;
     }
 
-    const title = find(selectors.title);
-    const company = find(selectors.company);
-    const location = find(selectors.location);
-    const postedDate = find(selectors.postedDate);
-    const description = find(selectors.description);
-    const url = window.location.href;
-
-    // Clean up location (remove extra text like "· 3 weeks ago" etc)
-    const cleanLocation = location
-      .replace(/\s*·\s*.*$/, "")
-      .replace(/^\s*\d+\s*\w+\s*ago\s*/i, "")
-      .trim();
-
     return {
-      title,
-      company,
-      location: cleanLocation,
-      postedDate,
-      description,
-      url,
+      title: title || "(untitled)",
+      company: company || "(unknown)",
+      location: cleanLocation || "(unknown)",
+      postedDate: postedDate || "",
+      description: description || "",
+      url: window.location.href,
       scrapedAt: new Date().toISOString(),
     };
   }
 
-  // ── CV as Text ─────────────────────────────────────────
+  // ── CV Text ─────────────────────────────────────────
   function buildCvText() {
     const cv = CV_DATA;
     const expText = cv.experience
@@ -96,13 +131,11 @@ Skills: ${cv.allSkillsFlat.join(", ")}
 Experience:
 ${expText}
 
-Summary: ${cv.summary}
-    `.trim();
+Summary: ${cv.summary}`.trim();
   }
 
-  // ── UI Creation ────────────────────────────────────────
+  // ── UI ───────────────────────────────────────────────
   function createOverlay() {
-    // Remove existing overlay if any
     const existing = document.getElementById("jm-overlay-root");
     if (existing) existing.remove();
 
@@ -150,13 +183,9 @@ Summary: ${cv.summary}
 
     document.body.appendChild(root);
 
-    // ── Event Listeners ──────────────────────────────────
     const floatingBtn = root.querySelector("#jm-floating-btn");
     const panel = root.querySelector("#jm-panel");
     const closeBtn = root.querySelector("#jm-close-btn");
-    const analyzeBtn = root.querySelector("#jm-analyze-btn");
-    const saveBtn = root.querySelector("#jm-save-btn");
-    const retryBtn = root.querySelector("#jm-retry-btn");
 
     floatingBtn.addEventListener("click", () => {
       panel.style.display = "block";
@@ -168,17 +197,16 @@ Summary: ${cv.summary}
       floatingBtn.style.display = "flex";
     });
 
-    analyzeBtn.addEventListener("click", runAnalysis);
-    retryBtn.addEventListener("click", runAnalysis);
-    saveBtn.addEventListener("click", saveToSheet);
+    root.querySelector("#jm-analyze-btn").addEventListener("click", runAnalysis);
+    root.querySelector("#jm-retry-btn").addEventListener("click", runAnalysis);
+    root.querySelector("#jm-save-btn").addEventListener("click", saveToSheet);
 
-    // Store refs
+    // Store refs on root for later
     root._refs = {
-      floatingBtn,
-      panel,
-      analyzeBtn,
-      saveBtn,
-      retryBtn,
+      floatingBtn, panel,
+      analyzeBtn: root.querySelector("#jm-analyze-btn"),
+      saveBtn: root.querySelector("#jm-save-btn"),
+      retryBtn: root.querySelector("#jm-retry-btn"),
       initialView: root.querySelector("#jm-initial-view"),
       resultsView: root.querySelector("#jm-results-view"),
       loadingView: root.querySelector("#jm-loading-view"),
@@ -193,21 +221,24 @@ Summary: ${cv.summary}
       summary: root.querySelector("#jm-summary"),
     };
 
-    return root._refs;
+    console.log("[JobMatcher] Overlay injected. Ready on:", window.location.href);
   }
 
-  // ── Analysis Flow ──────────────────────────────────────
+  // ── Analysis ─────────────────────────────────────────
   async function runAnalysis() {
-    const refs = document.getElementById("jm-overlay-root")._refs;
-    if (isAnalyzing) return;
+    const root = document.getElementById("jm-overlay-root");
+    if (!root || isAnalyzing) return;
+    const refs = root._refs;
 
     isAnalyzing = true;
     showView(refs, "loading");
 
     try {
       const job = extractJobDetails();
+      console.log("[JobMatcher] Extracted job:", job.title, "@", job.company, "| desc length:", job.description.length);
+
       if (!job.description || job.description.length < 50) {
-        throw new Error("Could not extract job description. Make sure you're on a LinkedIn job page.");
+        throw new Error("Could not extract enough job description text. Try scrolling down to load the full job description first.");
       }
 
       refs.loadingText.textContent = "Analyzing with DeepSeek AI...";
@@ -224,7 +255,9 @@ Summary: ${cv.summary}
       analysisResult = response.data;
       renderResults(refs, analysisResult);
       showView(refs, "results");
+      console.log("[JobMatcher] Analysis complete:", analysisResult.matchPercentage + "%");
     } catch (err) {
+      console.error("[JobMatcher] Error:", err.message);
       refs.errorText.textContent = err.message;
       showView(refs, "error");
     } finally {
@@ -232,65 +265,57 @@ Summary: ${cv.summary}
     }
   }
 
-  // ── Render Results ─────────────────────────────────────
+  // ── Render ───────────────────────────────────────────
   function renderResults(refs, result) {
     const { matchPercentage, matchedSkills, missingSkills, strengths, gaps, summary } = result;
+    const scoreColor = matchPercentage >= 80 ? "#16a34a" : matchPercentage >= 60 ? "#ca8a04" : "#dc2626";
 
-    // Score with color
-    const scoreColor =
-      matchPercentage >= 80 ? "#16a34a" : matchPercentage >= 60 ? "#ca8a04" : "#dc2626";
     refs.score.innerHTML = `
       <div class="jm-score-circle" style="border-color:${scoreColor};color:${scoreColor}">
         <span class="jm-score-num">${matchPercentage}%</span>
         <span class="jm-score-label">Match</span>
-      </div>
-    `;
+      </div>`;
 
     refs.matchedSkills.innerHTML = `
-      <div class="jm-section-title jm-match">✅ Matched Skills (${matchedSkills.length})</div>
-      <div class="jm-tags">${matchedSkills.map((s) => `<span class="jm-tag jm-tag-match">${s}</span>`).join("")}</div>
-    `;
+      <div class="jm-section-title jm-match">✅ Matched (${matchedSkills.length})</div>
+      <div class="jm-tags">${matchedSkills.map((s) => `<span class="jm-tag jm-tag-match">${s}</span>`).join("")}</div>`;
 
     refs.missingSkills.innerHTML = missingSkills.length
-      ? `
-      <div class="jm-section-title jm-miss">⚠️ Missing Skills (${missingSkills.length})</div>
-      <div class="jm-tags">${missingSkills.map((s) => `<span class="jm-tag jm-tag-miss">${s}</span>`).join("")}</div>`
+      ? `<div class="jm-section-title jm-miss">⚠️ Missing (${missingSkills.length})</div>
+         <div class="jm-tags">${missingSkills.map((s) => `<span class="jm-tag jm-tag-miss">${s}</span>`).join("")}</div>`
       : "";
 
     refs.strengths.innerHTML = strengths.length
-      ? `
-      <div class="jm-section-title">💪 Strengths</div>
-      <ul class="jm-list">${strengths.map((s) => `<li>${s}</li>`).join("")}</ul>`
+      ? `<div class="jm-section-title">💪 Strengths</div>
+         <ul class="jm-list">${strengths.map((s) => `<li>${s}</li>`).join("")}</ul>`
       : "";
 
     refs.gaps.innerHTML = gaps.length
-      ? `
-      <div class="jm-section-title">📋 Gaps</div>
-      <ul class="jm-list">${gaps.map((g) => `<li>${g}</li>`).join("")}</ul>`
+      ? `<div class="jm-section-title">📋 Gaps</div>
+         <ul class="jm-list">${gaps.map((g) => `<li>${g}</li>`).join("")}</ul>`
       : "";
 
-    refs.summary.innerHTML = summary
-      ? `<div class="jm-summary-box">${summary}</div>`
-      : "";
+    refs.summary.innerHTML = summary ? `<div class="jm-summary-box">${summary}</div>` : "";
   }
 
-  // ── Save to Sheet ──────────────────────────────────────
+  // ── Save ─────────────────────────────────────────────
   async function saveToSheet() {
-    const refs = document.getElementById("jm-overlay-root")._refs;
-    if (isSaving) return;
+    const root = document.getElementById("jm-overlay-root");
+    if (!root || isSaving) return;
+    const refs = root._refs;
 
     isSaving = true;
-    const saveBtn = refs.saveBtn;
-    saveBtn.textContent = "Saving...";
-    saveBtn.disabled = true;
+    const btn = refs.saveBtn;
+    btn.textContent = "Saving...";
+    btn.disabled = true;
 
     try {
       const job = extractJobDetails();
       const payload = {
         ...job,
         matchPercentage: analysisResult.matchPercentage,
-        matchedSkills: analysisResult.matchedSkills.join(", "),
-        missingSkills: analysisResult.missingSkills.join(", "),
+        matchedSkills: (analysisResult.matchedSkills || []).join(", "),
+        missingSkills: (analysisResult.missingSkills || []).join(", "),
         summary: analysisResult.summary,
       };
 
@@ -301,25 +326,21 @@ Summary: ${cv.summary}
 
       if (!response.success) throw new Error(response.error);
 
-      saveBtn.textContent = "✅ Saved!";
-      saveBtn.classList.add("jm-btn-saved");
+      btn.textContent = "✅ Saved!";
       setTimeout(() => {
-        saveBtn.textContent = "📊 Save to Sheet";
-        saveBtn.classList.remove("jm-btn-saved");
-        saveBtn.disabled = false;
+        btn.textContent = "📊 Save to Sheet";
+        btn.disabled = false;
       }, 2000);
     } catch (err) {
-      saveBtn.textContent = "❌ Failed — Retry";
-      saveBtn.disabled = false;
-      setTimeout(() => {
-        saveBtn.textContent = "📊 Save to Sheet";
-      }, 2500);
+      btn.textContent = "❌ Failed — Retry";
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = "📊 Save to Sheet"; }, 2500);
     } finally {
       isSaving = false;
     }
   }
 
-  // ── View Helpers ───────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────
   function showView(refs, view) {
     refs.initialView.style.display = view === "initial" ? "block" : "none";
     refs.resultsView.style.display = view === "results" ? "block" : "none";
@@ -327,21 +348,20 @@ Summary: ${cv.summary}
     refs.errorView.style.display = view === "error" ? "block" : "none";
   }
 
-  // ── Init ───────────────────────────────────────────────
+  // ── Init (aggressive — inject button immediately) ────
   function init() {
-    // Wait for job content to load
-    const checkInterval = setInterval(() => {
-      const desc = document.querySelector(
-        ".jobs-description__content, .jobs-description-content__text, #job-details, .jobs-box__html-content"
-      );
-      if (desc && desc.textContent.trim().length > 50) {
-        clearInterval(checkInterval);
+    console.log("[JobMatcher] Initializing on:", window.location.href);
+
+    // Inject the button/overlay immediately
+    createOverlay();
+
+    // Also retry after a delay to catch late-loading content
+    setTimeout(() => {
+      const existing = document.getElementById("jm-overlay-root");
+      if (!existing || !existing.querySelector("#jm-floating-btn")) {
         createOverlay();
       }
-    }, 800);
-
-    // Timeout after 15 seconds
-    setTimeout(() => clearInterval(checkInterval), 15000);
+    }, 3000);
   }
 
   if (document.readyState === "loading") {
