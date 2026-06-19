@@ -28,12 +28,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
+  // Test Sheet
+  const testSheetBtn = document.getElementById("test-sheet-btn");
+  testSheetBtn.addEventListener("click", async () => {
+    const url = sheetsInput.value.trim();
+    if (!url) {
+      showStatus("Enter a Web App URL first", "error");
+      return;
+    }
+    testSheetBtn.textContent = "Testing...";
+    testSheetBtn.disabled = true;
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          title: "TEST JOB — Connection Works!",
+          company: "Test Company",
+          location: "Remote",
+          url: "https://example.com",
+          postedDate: new Date().toISOString(),
+          description: "This is a test entry from Job Matcher.",
+          matchPercentage: 99,
+          matchedSkills: "Test",
+          missingSkills: "None",
+          summary: "Connection successful!"
+        })
+      });
+      const text = await response.text();
+      if (response.ok) {
+        showStatus("✅ Test data sent! Check your sheet.", "success");
+      } else {
+        showStatus(`❌ Error ${response.status}: ${text.substring(0, 60)}`, "error");
+      }
+    } catch (err) {
+      showStatus(`❌ ${err.message.substring(0, 80)}`, "error");
+    } finally {
+      testSheetBtn.textContent = "Test Sheet";
+      testSheetBtn.disabled = false;
+    }
+  });
+
   function showStatus(message, type) {
     status.textContent = message;
     status.className = "status " + type;
     setTimeout(() => {
       status.textContent = "";
       status.className = "status";
-    }, 2500);
+    }, 5000);
   }
 });

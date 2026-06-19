@@ -65,8 +65,12 @@ body {
   color: #2563eb;
 }
 
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
 .btn-primary {
-  width: 100%;
+  flex: 1;
   padding: 10px;
   border: none;
   border-radius: 8px;
@@ -79,6 +83,20 @@ body {
 }
 .btn-primary:hover {
   opacity: 0.9;
+}
+.btn-secondary {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-secondary:hover {
+  background: #f3f4f6;
 }
 
 .status {

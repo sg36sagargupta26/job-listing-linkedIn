@@ -71,16 +71,32 @@ async function saveToSheet(jobData) {
   const { sheetsWebAppUrl } = await chrome.storage.sync.get("sheetsWebAppUrl");
   if (!sheetsWebAppUrl) throw new Error("Google Sheets URL not set. Open extension popup to configure.");
 
-  const response = await fetch(sheetsWebAppUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(jobData)
-  });
+  console.log("[JobMatcher] Saving to sheet:", sheetsWebAppUrl.substring(0, 50) + "...");
 
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Sheet error: ${response.status} — ${err}`);
+  try {
+    const response = await fetch(sheetsWebAppUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(jobData)
+    });
+
+    console.log("[JobMatcher] Sheet response status:", response.status);
+
+    const text = await response.text();
+    console.log("[JobMatcher] Sheet response body:", text.substring(0, 200));
+
+    if (!response.ok) {
+      throw new Error(`Sheet error: ${response.status} — ${text}`);
+    }
+
+    // Try JSON parse, fallback to text
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { success: true, raw: text };
+    }
+  } catch (err) {
+    console.error("[JobMatcher] Sheet save failed:", err);
+    throw err;
   }
-
-  return await response.json();
 }
