@@ -287,7 +287,6 @@ Summary: ${cv.summary}`.trim();
     }, { passive: false });
 
     const floatingBtn = root.querySelector("#jm-floating-btn");
-    const panel = root.querySelector("#jm-panel");
     const closeBtn = root.querySelector("#jm-close-btn");
 
     floatingBtn.addEventListener("click", () => {
