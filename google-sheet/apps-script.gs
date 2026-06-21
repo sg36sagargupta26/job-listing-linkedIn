@@ -17,7 +17,7 @@ function doPost(e) {
       sheet.appendRow([
         "Title", "Company", "Location", "URL", "Posted", "Description",
         "Match %", "Matched Skills", "Missing Skills", "Summary",
-        "Action Required", "Action Email", "Saved At"
+        "Saved At", "Action Required", "Action Email"
       ]);
     }
 
@@ -32,9 +32,9 @@ function doPost(e) {
       data.matchedSkills || "",
       data.missingSkills || "",
       data.summary || "",
+      new Date().toISOString(),
       data.actionRequired || "",
-      data.actionEmail || "",
-      new Date().toISOString()
+      data.actionEmail || ""
     ]);
 
     return ContentService
