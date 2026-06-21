@@ -28,7 +28,14 @@ Return a JSON object with this exact structure (no markdown, no extra text):
   "missingSkills": ["<skill1>", "<skill2>", ...],
   "strengths": ["<brief strength>", ...],
   "gaps": ["<brief gap>", ...],
-  "summary": "<one-line overall fit assessment>"
+  "summary": "<one-line overall fit assessment>",
+  "actionRequired": {
+    "detected": <true or false>,
+    "actionType": "<email|link|form|other|none>",
+    "description": "<what the applicant needs to do, e.g. 'Send your CV with Total Exp, CTC, ECTC, Notice Period to dharmendra.singh@omvrti.ai'>",
+    "email": "<email address if found, else null>",
+    "instructions": ["<step 1>", "<step 2>", ...]
+  }
 }
 
 ─── CANDIDATE CV ───

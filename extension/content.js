@@ -246,6 +246,10 @@ Summary: ${cv.summary}`.trim();
           <div id="jm-results-view" style="display:none;">
             <div id="jm-score"></div>
             <button id="jm-save-btn" class="jm-btn jm-btn-success">📊 Save to Sheet</button>
+            <div id="jm-action-section" style="display:none;">
+              <div class="jm-section-title jm-action-title">⚡ Action Required by Poster</div>
+              <div id="jm-action-content"></div>
+            </div>
             <div id="jm-matched-skills"></div>
             <div id="jm-missing-skills"></div>
             <div id="jm-strengths"></div>
@@ -325,6 +329,8 @@ Summary: ${cv.summary}`.trim();
       strengths: root.querySelector("#jm-strengths"),
       gaps: root.querySelector("#jm-gaps"),
       summary: root.querySelector("#jm-summary"),
+      actionSection: root.querySelector("#jm-action-section"),
+      actionContent: root.querySelector("#jm-action-content"),
     };
 
     // Set site-aware title
@@ -379,7 +385,7 @@ Summary: ${cv.summary}`.trim();
 
   // ── Render ───────────────────────────────────────────
   function renderResults(refs, result) {
-    const { matchPercentage, matchedSkills, missingSkills, strengths, gaps, summary } = result;
+    const { matchPercentage, matchedSkills, missingSkills, strengths, gaps, summary, actionRequired } = result;
     const scoreColor = matchPercentage >= 80 ? "#16a34a" : matchPercentage >= 60 ? "#ca8a04" : "#dc2626";
 
     refs.score.innerHTML = `
@@ -408,6 +414,27 @@ Summary: ${cv.summary}`.trim();
       : "";
 
     refs.summary.innerHTML = summary ? `<div class="jm-summary-box">${summary}</div>` : "";
+
+    // ── Quick Action Section ─────────────────────
+    if (actionRequired && actionRequired.detected) {
+      let actionHtml = `<p class="jm-action-desc">${escapeHtml(actionRequired.description || "")}</p>`;
+      if (actionRequired.email) {
+        actionHtml += `<div class="jm-action-row"><span class="jm-action-label">📧 Email:</span> <a href="mailto:${escapeHtml(actionRequired.email)}" class="jm-action-email">${escapeHtml(actionRequired.email)}</a></div>`;
+      }
+      if (actionRequired.instructions && actionRequired.instructions.length) {
+        actionHtml += `<ul class="jm-list">${actionRequired.instructions.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`;
+      }
+      refs.actionContent.innerHTML = actionHtml;
+      refs.actionSection.style.display = "block";
+    } else {
+      refs.actionSection.style.display = "none";
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   // ── Save ─────────────────────────────────────────────
@@ -429,6 +456,10 @@ Summary: ${cv.summary}`.trim();
         matchedSkills: (analysisResult.matchedSkills || []).join(", "),
         missingSkills: (analysisResult.missingSkills || []).join(", "),
         summary: analysisResult.summary,
+        actionRequired: analysisResult.actionRequired
+          ? (analysisResult.actionRequired.description || "None")
+          : "None",
+        actionEmail: (analysisResult.actionRequired && analysisResult.actionRequired.email) || "",
       };
 
       const response = await chrome.runtime.sendMessage({

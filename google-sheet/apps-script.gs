@@ -16,7 +16,8 @@ function doPost(e) {
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         "Title", "Company", "Location", "URL", "Posted", "Description",
-        "Match %", "Matched Skills", "Missing Skills", "Summary", "Saved At"
+        "Match %", "Matched Skills", "Missing Skills", "Summary",
+        "Action Required", "Action Email", "Saved At"
       ]);
     }
 
@@ -31,6 +32,8 @@ function doPost(e) {
       data.matchedSkills || "",
       data.missingSkills || "",
       data.summary || "",
+      data.actionRequired || "",
+      data.actionEmail || "",
       new Date().toISOString()
     ]);
 
