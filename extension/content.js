@@ -421,6 +421,9 @@ Summary: ${cv.summary}`.trim();
       if (actionRequired.email) {
         actionHtml += `<div class="jm-action-row"><span class="jm-action-label">📧 Email:</span> <a href="mailto:${escapeHtml(actionRequired.email)}" class="jm-action-email">${escapeHtml(actionRequired.email)}</a></div>`;
       }
+      if (actionRequired.phone) {
+        actionHtml += `<div class="jm-action-row"><span class="jm-action-label">📞 Phone:</span> <a href="tel:${escapeHtml(actionRequired.phone)}" class="jm-action-email">${escapeHtml(actionRequired.phone)}</a></div>`;
+      }
       if (actionRequired.instructions && actionRequired.instructions.length) {
         actionHtml += `<ul class="jm-list">${actionRequired.instructions.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`;
       }
@@ -460,6 +463,7 @@ Summary: ${cv.summary}`.trim();
           ? (analysisResult.actionRequired.description || "None")
           : "None",
         actionEmail: (analysisResult.actionRequired && analysisResult.actionRequired.email) || "",
+        actionPhone: (analysisResult.actionRequired && analysisResult.actionRequired.phone) || "",
       };
 
       const response = await chrome.runtime.sendMessage({
