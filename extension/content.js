@@ -485,9 +485,12 @@ Summary: ${cv.summary}`.trim();
 
       btn.textContent = "✅ Saved!";
       setTimeout(() => {
+        // Close panel, show button again
+        refs.panel.style.display = "none";
+        refs.floatingBtn.style.display = "flex";
         btn.textContent = "📊 Save to Sheet";
         btn.disabled = false;
-      }, 2000);
+      }, 1000);
     } catch (err) {
       btn.textContent = "❌ Failed — Retry";
       btn.disabled = false;
