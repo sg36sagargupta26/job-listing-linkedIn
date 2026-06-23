@@ -247,7 +247,7 @@ Summary: ${cv.summary}`.trim();
             <div id="jm-score"></div>
             <button id="jm-save-btn" class="jm-btn jm-btn-success">📊 Save to Sheet</button>
             <div id="jm-action-section" style="display:none;">
-              <div class="jm-section-title jm-action-title">⚡ Action Required by Poster</div>
+              <div class="jm-section-title jm-action-title">📧 Recruiter Contact</div>
               <div id="jm-action-content"></div>
             </div>
             <div id="jm-matched-skills"></div>
@@ -371,9 +371,10 @@ Summary: ${cv.summary}`.trim();
       if (!response.success) throw new Error(response.error);
 
       analysisResult = response.data;
-      renderResults(refs, analysisResult);
+      const emails = extractEmails(job.description);
+      renderResults(refs, analysisResult, emails);
       showView(refs, "results");
-      console.log("[JobMatcher] Analysis complete:", analysisResult.matchPercentage + "%");
+      console.log("[JobMatcher] Analysis complete:", analysisResult.matchPercentage + "%", "| emails:", emails);
     } catch (err) {
       console.error("[JobMatcher] Error:", err.message);
       refs.errorText.textContent = err.message;
@@ -383,9 +384,26 @@ Summary: ${cv.summary}`.trim();
     }
   }
 
+  // ── Email Extraction ─────────────────────────────────
+  function extractEmails(text) {
+    if (!text) return [];
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+    const matches = text.match(emailRegex) || [];
+    // Deduplicate, filter common false positives
+    const blocked = ["noreply@", "no-reply@", "donotreply@", "example@", "test@", "@example.com", "@linkedin.com"];
+    const seen = new Set();
+    return matches.filter(email => {
+      const lower = email.toLowerCase();
+      if (seen.has(lower)) return false;
+      if (blocked.some(b => lower.includes(b))) return false;
+      seen.add(lower);
+      return true;
+    });
+  }
+
   // ── Render ───────────────────────────────────────────
-  function renderResults(refs, result) {
-    const { matchPercentage, matchedSkills, missingSkills, strengths, gaps, summary, actionRequired } = result;
+  function renderResults(refs, result, emails) {
+    const { matchPercentage, matchedSkills, missingSkills, strengths, gaps, summary } = result;
     const scoreColor = matchPercentage >= 80 ? "#16a34a" : matchPercentage >= 60 ? "#ca8a04" : "#dc2626";
 
     refs.score.innerHTML = `
@@ -415,16 +433,15 @@ Summary: ${cv.summary}`.trim();
 
     refs.summary.innerHTML = summary ? `<div class="jm-summary-box">${summary}</div>` : "";
 
-    // ── Quick Action Section ─────────────────────
-    if (actionRequired && actionRequired.detected) {
-      let actionHtml = `<p class="jm-action-desc">${escapeHtml(actionRequired.description || "")}</p>`;
-      if (actionRequired.email) {
-        actionHtml += `<div class="jm-action-row"><span class="jm-action-label">📧 Email:</span> <a href="mailto:${escapeHtml(actionRequired.email)}" class="jm-action-email">${escapeHtml(actionRequired.email)}</a></div>`;
-      }
-      if (actionRequired.instructions && actionRequired.instructions.length) {
-        actionHtml += `<ul class="jm-list">${actionRequired.instructions.map(i => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`;
-      }
-      refs.actionContent.innerHTML = actionHtml;
+    // ── Quick Action Section (extracted emails) ───
+    if (emails && emails.length > 0) {
+      const emailLinks = emails.map(e =>
+        `<a href="mailto:${escapeHtml(e)}" class="jm-action-email">${escapeHtml(e)}</a>`
+      ).join(", ");
+      refs.actionContent.innerHTML = `
+        <div class="jm-action-row"><span class="jm-action-label">📧 Found ${emails.length} email${emails.length > 1 ? "s" : ""}:</span> ${emailLinks}</div>
+        <p class="jm-action-hint">Click to cold-mail the recruiter</p>
+      `;
       refs.actionSection.style.display = "block";
     } else {
       refs.actionSection.style.display = "none";
@@ -456,10 +473,7 @@ Summary: ${cv.summary}`.trim();
         matchedSkills: (analysisResult.matchedSkills || []).join(", "),
         missingSkills: (analysisResult.missingSkills || []).join(", "),
         summary: analysisResult.summary,
-        actionRequired: analysisResult.actionRequired
-          ? (analysisResult.actionRequired.description || "None")
-          : "None",
-        actionEmail: (analysisResult.actionRequired && analysisResult.actionRequired.email) || "",
+        actionEmail: extractEmails(job.description).join(", "),
       };
 
       const response = await chrome.runtime.sendMessage({
